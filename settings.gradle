@@ -1,0 +1,9 @@
+include 'core-service:core-service-api',
+        'core-service:core-service-impl',
+        'left-service:left-service-api',
+        'left-service:left-service-impl',
+        'left-service:left-service-ear',
+        'right-service:right-service-api',
+        'right-service:right-service-impl',
+        'right-service:right-service-ear',
+        'core-runner'

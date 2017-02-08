@@ -1,0 +1,5 @@
+dependencies {
+    compile project(":core-service:core-service-api")
+    compile project(":left-service:left-service-api")
+    compile project(":right-service:right-service-api")
+}
