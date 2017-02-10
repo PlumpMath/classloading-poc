@@ -1,0 +1,5 @@
+apply plugin: 'ear'
+
+dependencies {
+    earlib project(":right-service:right-service-impl")
+}
