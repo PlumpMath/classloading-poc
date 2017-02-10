@@ -1,0 +1,34 @@
+configurations {
+    serviceEars
+}
+
+dependencies {
+    compile project(":core-service:core-service-impl")
+    compile "org.springframework:spring-beans:4.3.6.RELEASE"
+    compile "org.springframework:spring-context:4.3.6.RELEASE"
+    compile "org.openrepose:repose-core:8.4.0.1"
+
+    serviceEars project(path: ":left-service:left-service-ear", configuration: "archives")
+    serviceEars project(path: ":right-service:right-service-ear", configuration: "archives")
+
+    testCompile "junit:junit:4.12"
+}
+
+task copyEars() {
+    dependsOn(":left-service:left-service-ear:ear",
+              ":right-service:right-service-ear:ear")
+    ext.outputDir = "$buildDir/ears"
+    inputs.files(configurations.serviceEars.files)
+    outputs.dir outputDir
+
+    doLast {
+        file("$buildDir/exploded-ears").mkdirs()
+        file(outputDir).mkdirs()
+        copy {
+            from configurations.serviceEars.files
+            into outputDir
+        }
+    }
+}
+
+processResources.dependsOn copyEars
