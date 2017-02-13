@@ -2,4 +2,5 @@ apply plugin: 'ear'
 
 dependencies {
     earlib project(":left-service:left-service-impl")
+    earlib project(":top-service:top-service-impl")
 }

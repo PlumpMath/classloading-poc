@@ -6,4 +6,6 @@ include 'core-service:core-service-api',
         'right-service:right-service-api',
         'right-service:right-service-impl',
         'right-service:right-service-ear',
+        'top-service:top-service-api',
+        'top-service:top-service-impl',
         'core-runner'
