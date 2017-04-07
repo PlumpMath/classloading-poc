@@ -18,10 +18,12 @@ import scala.util.Try
   */
 class CoreRunner {
   def initializeContext() {
+    //build the core context
     val coreContext: AnnotationConfigApplicationContext = new AnnotationConfigApplicationContext
     coreContext.scan("org.openrepose.poc.coreservice")
     coreContext.refresh()
 
+    //find all the services
     var serviceDefinitions: Set[ServiceDefinition] = Set.empty
     val earFiles: Array[File] = new File("./build/ears").listFiles(new FilenameFilter {
       override def accept(file: File, name: String) = name.endsWith(".ear")
@@ -41,14 +43,9 @@ class CoreRunner {
 
         ServiceDefinition(entry.getKey, serviceDetails.get("package"), Option(serviceDetails.get("uses")).map(_.split(",").toSet).getOrElse(Set.empty))
       }
-
-//      for (service <- foundServices.entrySet) {
-//        val beanScanner: ClassPathBeanDefinitionScanner = new ClassPathBeanDefinitionScanner(coreContext)
-//        beanScanner.setResourceLoader(new DefaultResourceLoader(earProvider.getClassLoader))
-//        beanScanner.scan(service.getValue.unwrapped.asInstanceOf[String])
-//      }
     }
 
+    //build the service dependency tree
     val serviceTree: mutable.Map[String, ServiceNode] = mutable.Map.empty
     for(serviceDefinition <- serviceDefinitions) {
       val serviceNode = serviceTree.getOrElse(serviceDefinition.name, new ServiceNode(serviceDefinition.name))
@@ -68,13 +65,26 @@ class CoreRunner {
       serviceTree.put(serviceDefinition.name, serviceNode)
     }
 
-    //        coreContext.refresh();
+    //chain the service contexts into a working overall context
+    val servicesInOrder = serviceTree.values.toList.sortBy(_.depth)
+    val finalContext = servicesInOrder.foldLeft(coreContext) { (currentContext, serviceNode) =>
+      Option(serviceNode.packageName) match {
+        case Some(name) =>
+          val newContext: AnnotationConfigApplicationContext = new AnnotationConfigApplicationContext()
+          newContext.setParent(currentContext)
+          newContext.scan(name)
+          newContext.refresh()
+          newContext
+        case None =>
+          currentContext
+      }
+    }
   }
 }
 
 case class ServiceDefinition(name: String, packageName: String, usedServices: Set[String])
 class ServiceNode(name: String) {
-  var packageName: String = ""
+  var packageName: String = null
   var usedServices: mutable.Set[ServiceNode] = mutable.Set.empty
   lazy val depth: Int = Try(usedServices.map(_.depth).max + 1).getOrElse(0)
 
