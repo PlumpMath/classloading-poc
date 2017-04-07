@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * Created by adrian on 2/10/17.
  */
-public class CoreRunner {
+public class CoreRunnerOld {
     public void initializeContext() throws Exception {
 
         AnnotationConfigApplicationContext coreContext = new AnnotationConfigApplicationContext();
