@@ -10,6 +10,8 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
+import scala.collection.mutable
+import scala.util.Try
 
 /**
   * Created by adrian on 2/10/17.
@@ -46,8 +48,41 @@ class CoreRunner {
 //        beanScanner.scan(service.getValue.unwrapped.asInstanceOf[String])
 //      }
     }
+
+    val serviceTree: mutable.Map[String, ServiceNode] = mutable.Map.empty
+    for(serviceDefinition <- serviceDefinitions) {
+      val serviceNode = serviceTree.getOrElse(serviceDefinition.name, new ServiceNode(serviceDefinition.name))
+      serviceNode.packageName = serviceDefinition.packageName
+      serviceDefinition.usedServices.foreach { serviceName =>
+        val dependentNode = serviceTree.get(serviceName) match {
+          case Some(node) =>
+            node.checkParents(serviceDefinition.name)
+            node
+          case None =>
+            val newNode = new ServiceNode(serviceName)
+            serviceTree.put(serviceName, newNode)
+            newNode
+        }
+        serviceNode.usedServices.add(dependentNode)
+      }
+      serviceTree.put(serviceDefinition.name, serviceNode)
+    }
+
     //        coreContext.refresh();
   }
 }
 
 case class ServiceDefinition(name: String, packageName: String, usedServices: Set[String])
+class ServiceNode(name: String) {
+  var packageName: String = ""
+  var usedServices: mutable.Set[ServiceNode] = mutable.Set.empty
+  lazy val depth: Int = Try(usedServices.map(_.depth).max + 1).getOrElse(0)
+
+  def checkParents(queriedName: String): Unit = {
+    if(name == queriedName) {
+      throw new Exception("Circular dependency")
+    } else {
+      usedServices.foreach( _.checkParents(queriedName) )
+    }
+  }
+}
